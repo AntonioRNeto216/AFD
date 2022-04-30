@@ -13,24 +13,25 @@ class AFD {
 private:
 
     // Map que guarda as posições dos estados em D
-    map<string, int> mapaEstados;
+    map<char, int> mapaEstados;
 
     // Map que guarda as posições dos símbolos em D
-    map<string, int> mapaSimbolos;
+    map<char, int> mapaSimbolos;
 
     // Matriz que representa as funções de transição -> Estado x Símbolo
-    vector<vector<string>> D;
+    vector<vector<char>> D;
 
     // Atributo para armazenar o estado inicial
-    string i; // ! talvez armazenar em int
+    char i;
 
     // Vetor para armazenar os estados finais
-    vector<string> F;
+    vector<char> F;
 
     // Todas as palavras que serão verificadas
     vector<string> palavrasTeste;
 
-    // void VerificaPalavra(string &palavra);
+    void VerificaPalavra(string &palavra);
+    bool eEstadoFinal(char estado);
 
 public:
 
@@ -42,21 +43,22 @@ public:
 
     // }
 
-    void InsereEstado(string estado);
-    void InsereSimbolos(string simbolo);
+    void InsereEstado(char estado);
+    void InsereSimbolos(char simbolo);
     int RetornaTamanhoEstado();
-    void InsereTransicoesEmD(vector<string> novaLinha);
-    void iSetter(string iValor);
-    void InsereNoF(string novoEstadoFinal);
+    void InsereTransicoesEmD(vector<char> novaLinha);
+    void iSetter(char iValor);
+    void InsereNoF(char novoEstadoFinal);
     void InsereNasPalavrasTeste(string novaPalavraTeste);
     void PrintInformacoes();
+    void Executa();
 };
 
 /**
  * Adiciona o estado no mapaEstados
  * @param estado Estado que estamos adicionando
  */
-void AFD::InsereEstado(string estado) {
+void AFD::InsereEstado(char estado) {
     int valorChave = mapaEstados.size();
     mapaEstados[estado] = valorChave;
 }
@@ -65,7 +67,7 @@ void AFD::InsereEstado(string estado) {
  * Adiciona o símbolo no mapaSimbolos
  * @param simbolo Símbolo que estamos adicionando
  */
-void AFD::InsereSimbolos(string simbolo) {
+void AFD::InsereSimbolos(char simbolo) {
     int valorChave = mapaSimbolos.size();
     mapaSimbolos[simbolo] = valorChave;
 }
@@ -82,7 +84,7 @@ int AFD::RetornaTamanhoEstado() {
  * Insere uma nova linha na matriz D
  * @param novaLinha Vector contendo as transições do estado
  */
-void AFD::InsereTransicoesEmD(vector<string> novaLinha) {
+void AFD::InsereTransicoesEmD(vector<char> novaLinha) {
     D.push_back(novaLinha);
 }
 
@@ -90,7 +92,7 @@ void AFD::InsereTransicoesEmD(vector<string> novaLinha) {
  * Setter do atributo privado i
  * @param iValor Novo valor para i
  */
-void AFD::iSetter(string iValor) {
+void AFD::iSetter(char iValor) {
     i = iValor;
 }
 
@@ -98,7 +100,7 @@ void AFD::iSetter(string iValor) {
  * Inserindo novo estado final em F
  * @param novoEstadoFinal Novo estado final para o vector
  */
-void AFD::InsereNoF(string novoEstadoFinal) {
+void AFD::InsereNoF(char novoEstadoFinal) {
     F.push_back(novoEstadoFinal);
 }
 
@@ -140,6 +142,55 @@ void AFD::PrintInformacoes() {
         cout << palavraTeste << endl;
 }
 
+/**
+ * Método que gerencia todo o processo de verificação
+ */
+void AFD::Executa() {
+    for (auto palavraTeste : palavrasTeste) {
+        VerificaPalavra(palavraTeste);
+    }
+}
+
+/**
+ * Executa toda a lógica de verificação da palavra enviada
+ * @param palavra Palavra que deve ser validada no autômato
+ */
+void AFD::VerificaPalavra(string &palavra) {
+    char estadoAtual = i;
+    for (int index = 0; index < palavra.size(); index++) {
+
+        cout << "-> " << estadoAtual << " ";
+
+        char letra = palavra[index];
+        estadoAtual = D[mapaEstados[estadoAtual]][mapaSimbolos[letra]];
+        if (estadoAtual == ' ') {
+            cout << endl << "-----" << endl;
+            cout << "Chegamos em um estado que não possuia mais os caminhos que sua palavra precisa" << endl;
+            cout << "-----" << endl << endl;
+            return;
+        } else if (index == palavra.size() - 1) {
+            cout << "-> " << estadoAtual << " ";
+
+            string fraseFinal = eEstadoFinal(estadoAtual) ? "| foi aceita pelo AFD !!" : "| nao foi aceita !!";
+            cout << endl << "-----" << endl;
+            cout << "A palavra: |" << palavra << fraseFinal << endl;
+            cout << "-----" << endl << endl;
+        }
+    }
+}
+
+/**
+ * Verifica se o estado é final
+ * @param estado Estado que será verificado
+ */
+bool AFD::eEstadoFinal(char estado) {
+    bool resposta;
+    for (auto e : F)
+        resposta = e == estado;
+
+    return resposta;
+}
+
 void gerandoAFD(string &nomeArquivoEscolhido) {
 
     // Escolhendo arquivo que vai ser aberto
@@ -166,7 +217,7 @@ void gerandoAFD(string &nomeArquivoEscolhido) {
         int tamMapaEstado = 0;
 
         // Necessário para ajustar os valores na matriz D (atributo da AFD)
-        vector<string> linhaParaD;
+        vector<char> linhaParaD;
 
         while (!arquivo.eof()) {
             getline(arquivo, linha);
@@ -179,17 +230,20 @@ void gerandoAFD(string &nomeArquivoEscolhido) {
                 while (iss.good()) {
                     iss >> dado;
 
+                    // Variável que será usada para quase todos os casos abaixo
+                    char dadoChar = dado.at(0);
+
                     if (index == 1) {
-                        afd.InsereEstado(dado);
+                        afd.InsereEstado(dadoChar);
                     } else if (index == 2) {
-                        afd.InsereSimbolos(dado);
+                        afd.InsereSimbolos(dadoChar);
                         tamMapaEstado = afd.RetornaTamanhoEstado();
                     } else if (index >= 3 && index <= tamMapaEstado + 2) {
-                        linhaParaD.push_back(dado != "_" ? dado : " ");
+                        linhaParaD.push_back(dadoChar != '_' ? dadoChar : ' ');
                     } else if (index == tamMapaEstado + 3) {
-                        afd.iSetter(dado);
+                        afd.iSetter(dadoChar);
                     } else if (index == tamMapaEstado + 4) {
-                        afd.InsereNoF(dado);
+                        afd.InsereNoF(dadoChar);
                     } else if (index > tamMapaEstado + 5) {
                         afd.InsereNasPalavrasTeste(dado);
                     }
@@ -208,8 +262,9 @@ void gerandoAFD(string &nomeArquivoEscolhido) {
         return;
     }
 
-    afd.PrintInformacoes();
-    // ! Executar AFD
+    // Método caso seja necessário visualizar os dados do AFD
+    // afd.PrintInformacoes();
+    afd.Executa();
 }
 
 int main() {
