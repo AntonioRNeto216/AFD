@@ -34,15 +34,6 @@ private:
     bool eEstadoFinal(char estado);
 
 public:
-
-    AFD() {
-        cout << "CRIOU" << endl;
-    }
-
-    // ~AFD() {
-
-    // }
-
     void InsereEstado(char estado);
     void InsereSimbolos(char simbolo);
     int RetornaTamanhoEstado();
@@ -156,25 +147,51 @@ void AFD::Executa() {
  * @param palavra Palavra que deve ser validada no autômato
  */
 void AFD::VerificaPalavra(string &palavra) {
+
+    // Armazena o estado atual
     char estadoAtual = i;
+
+    cout << "- ESTADOS PERCORRIDOS" << endl;
+
+    /**
+     * Função lambda apenas para a mensagem final.
+     */
+    auto mensagemFinal = [&] () {
+        cout << "-> " << estadoAtual << " ";
+
+        string fraseFinal = eEstadoFinal(estadoAtual) ? "| foi aceita pelo AFD !!" : "| nao foi aceita !!";
+        
+        cout << endl << "-----" << endl;
+        cout << "A palavra: |" << palavra << fraseFinal << endl;
+        cout << "-----" << endl << endl;
+    };
+    
+    // Verifica se a palavra é vazia (Caso que o autômato aceita palavras vazias)
+    if (palavra.empty()) {
+        mensagemFinal();
+        return;
+    }
+
     for (int index = 0; index < palavra.size(); index++) {
 
         cout << "-> " << estadoAtual << " ";
 
+        // Letra que estamos analisando da palavra
         char letra = palavra[index];
+
+        // Definindo o proximo estado atual
         estadoAtual = D[mapaEstados[estadoAtual]][mapaSimbolos[letra]];
+
+        // 1º if: Caso especial onde não existe estado para 'aquele caminho'
+        // 2º if: Se chegamos na última letra da palavra
         if (estadoAtual == ' ') {
             cout << endl << "-----" << endl;
-            cout << "Chegamos em um estado que não possuia mais os caminhos que sua palavra precisa" << endl;
+            cout << "Chegamos em um estado que nao possuia mais os caminhos que sua palavra precisa" << endl;
+            cout << "Logo, a palavra: |" << palavra << "| nao foi aceita !!" << endl;
             cout << "-----" << endl << endl;
             return;
         } else if (index == palavra.size() - 1) {
-            cout << "-> " << estadoAtual << " ";
-
-            string fraseFinal = eEstadoFinal(estadoAtual) ? "| foi aceita pelo AFD !!" : "| nao foi aceita !!";
-            cout << endl << "-----" << endl;
-            cout << "A palavra: |" << palavra << fraseFinal << endl;
-            cout << "-----" << endl << endl;
+            mensagemFinal();
         }
     }
 }
@@ -185,10 +202,14 @@ void AFD::VerificaPalavra(string &palavra) {
  */
 bool AFD::eEstadoFinal(char estado) {
     bool resposta;
-    for (auto e : F)
-        resposta = e == estado;
 
-    return resposta;
+    for (auto e : F) {
+        resposta = e == estado;
+        if (resposta)
+            return true;
+    }
+
+    return false;
 }
 
 void gerandoAFD(string &nomeArquivoEscolhido) {
@@ -221,15 +242,16 @@ void gerandoAFD(string &nomeArquivoEscolhido) {
 
         while (!arquivo.eof()) {
             getline(arquivo, linha);
-
+            
             if (!linha.empty()) {
-                
+
                 iss.clear();
                 iss.str(linha);
 
                 while (iss.good()) {
+                    
                     iss >> dado;
-
+                    
                     // Variável que será usada para quase todos os casos abaixo
                     char dadoChar = dado.at(0);
 
@@ -237,7 +259,6 @@ void gerandoAFD(string &nomeArquivoEscolhido) {
                         afd.InsereEstado(dadoChar);
                     } else if (index == 2) {
                         afd.InsereSimbolos(dadoChar);
-                        tamMapaEstado = afd.RetornaTamanhoEstado();
                     } else if (index >= 3 && index <= tamMapaEstado + 2) {
                         linhaParaD.push_back(dadoChar != '_' ? dadoChar : ' ');
                     } else if (index == tamMapaEstado + 3) {
@@ -245,7 +266,7 @@ void gerandoAFD(string &nomeArquivoEscolhido) {
                     } else if (index == tamMapaEstado + 4) {
                         afd.InsereNoF(dadoChar);
                     } else if (index > tamMapaEstado + 5) {
-                        afd.InsereNasPalavrasTeste(dado);
+                        afd.InsereNasPalavrasTeste(dado == "_" ? "" : dado);
                     }
                 }
 
@@ -253,6 +274,9 @@ void gerandoAFD(string &nomeArquivoEscolhido) {
                     afd.InsereTransicoesEmD(linhaParaD);
                     linhaParaD.clear();
                 }
+                if (index == 1)
+                    tamMapaEstado = afd.RetornaTamanhoEstado();
+                
                 index++;
             }
         }
@@ -267,8 +291,37 @@ void gerandoAFD(string &nomeArquivoEscolhido) {
     afd.Executa();
 }
 
+string escolhaArquivo() {
+    int escolha;
+
+    do {
+        cout << endl << "-----" << endl;
+        cout << "Escolha uma opcao" << endl;
+        cout << "[1]: arquivo1.txt" << endl;
+        cout << "[2]: arquivo1.txt" << endl;
+        cout << "[3]: arquivo1.txt" << endl;
+        cout << "[4]: arquivo1.txt" << endl;
+        cout << "[5]: arquivo1.txt" << endl;
+        cout << "[0]: Sair" << endl;
+        cout << "Opcao: ";
+        cin >> escolha;
+        cout << endl;
+
+    } while (escolha < 0 || escolha > 5);
+
+    if (escolha == 0) {
+        cout << endl << "-----" << endl;
+        cout << "Saindo !!" << endl;
+        exit(0);
+    }
+
+    string arquivoEscolhido = "arquivo" + to_string(escolha) + ".txt";   
+
+    return arquivoEscolhido;
+}
+
 int main() {
-    string arquivo = "arquivo1.txt";
+    string arquivo = escolhaArquivo();
 
     gerandoAFD(arquivo);
 

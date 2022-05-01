@@ -7,7 +7,9 @@ e 3
 e e
 1
 4
-3
+5
 abaaa
 abbababa
 abaabaaba
+_
+ab
