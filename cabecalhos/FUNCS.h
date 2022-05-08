@@ -116,6 +116,7 @@ string escolhaArquivo() {
         exit(0);
     }
 
+    // Concatenação para gerar o nome do arquivo escolhido
     string arquivoEscolhido = "arquivo" + to_string(escolha) + ".txt";   
 
     return arquivoEscolhido;
